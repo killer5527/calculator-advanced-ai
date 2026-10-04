@@ -1,0 +1,13 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Calculator Advanced AI",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "Calculator Advanced AI",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "id": "com.zynovate.calculator",
+  "description": "Calculator Advanced AI ek fast aur clean design wala calculator app hai, jise daily calculations aur quick math solve karne ke liye banaya gaya hai."
+}
