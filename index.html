@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+        .calculator {
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            max-height: 780px;
+            background-color: #121212;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            position: relative;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 5px;
+            margin-bottom: 10px;
+        }
+        .icon-btn {
+            font-size: 20px;
+            cursor: pointer;
+            opacity: 0.8;
+            background: none;
+            border: none;
+            color: #fff;
+        }
+        .menu-container {
+            position: relative;
+        }
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 30px;
+            background-color: #2d2d2d;
+            border-radius: 12px;
+            width: 180px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            z-index: 10;
+            overflow: hidden;
+        }
+        .dropdown-menu.active {
+            display: block;
+        }
+        .dropdown-item {
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #ffffff;
+            cursor: pointer;
+            border-bottom: 1px solid #353535;
+        }
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+        .dropdown-item:active {
+            background-color: #444;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #121212;
+            z-index: 100;
+            flex-direction: column;
+            padding: 20px;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 500;
+            border-bottom: 1px solid #2d2d2d;
+            padding-bottom: 10px;
+        }
+        .close-modal {
+            cursor: pointer;
+            font-size: 22px;
+            color: #a8c7fa;
+        }
+        .modal-body {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .history-card {
+            background-color: #1e1e1e;
+            padding: 12px 16px;
+            border-radius: 12px;
+            text-align: right;
+        }
+        .history-card .h-expr {
+            font-size: 15px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+        .history-card .h-res {
+            font-size: 24px;
+            color: #fff;
+        }
+        .empty-history {
+            text-align: center;
+            color: #666;
+            margin-top: 50px;
+            font-size: 16px;
+        }
+        .action-btn {
+            background-color: #3b3b3b;
+            color: #a8c7fa;
+            border: none;
+            padding: 12px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        .theme-option {
+            background-color: #1e1e1e;
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .theme-option:active {
+            background-color: #333;
+        }
+
+        .toast {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(50px);
+            background-color: #333;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .display-screen {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            text-align: right;
+            padding: 10px 5px;
+            margin-bottom: 10px;
+        }
+        .current-expression {
+            font-size: 20px;
+            color: #888;
+            min-height: 28px;
+            word-wrap: break-word;
+        }
+        .main-display {
+            font-size: 52px;
+            font-weight: 300;
+            margin-top: 5px;
+            word-wrap: break-word;
+            cursor: pointer;
+        }
+        .main-display:active {
+            opacity: 0.7;
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            padding-bottom: 10px;
+        }
+
+        .btn {
+            background-color: #2d2d2d;
+            color: #ffffff;
+            font-size: 20px;
+            border: none;
+            border-radius: 50%;
+            aspect-ratio: 1;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            transition: background-color 0.1s ease;
+        }
+        
+        .btn:active {
+            background-color: #555555;
+        }
+
+        .btn.accent-theme {
+            background-color: #a8c7fa;
+            color: #001d35;
+            font-weight: 500;
+        }
+
+        .btn.accent-theme:active {
+            background-color: #7faee9;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator" id="mainContainer">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <button class="icon-btn" onclick="openModal('historyModal')">🕒</button>
+            <div class="menu-container">
+                <button class="icon-btn" onclick="toggleMenu()">⋮</button>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <div class="dropdown-item" onclick="openModal('historyModal'); toggleMenu();">History</div>
+                    <div class="dropdown-item" onclick="openModal('themeModal'); toggleMenu();">Choose theme</div>
+                    <div class="dropdown-item" onclick="openModal('privacyModal'); toggleMenu();">Privacy policy</div>
+                    <div class="dropdown-item" onclick="openModal('feedbackModal'); toggleMenu();">Send feedback</div>
+                    <div class="dropdown-item" onclick="openModal('helpModal'); toggleMenu();">Help</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. History Modal -->
+        <div class="modal-overlay" id="historyModal">
+            <div class="modal-header">
+                <span>Calculation History</span>
+                <span class="close-modal" onclick="closeModal('historyModal')">✕</span>
+            </div>
+            <div class="modal-body" id="historyContent">
+                <div class="empty-history">No history yet</div>
+            </div>
+            <button class="action-btn" onclick="clearHistory()">Clear History</button>
+        </div>
+
+        <!-- 2. Theme Modal -->
+        <div class="modal-overlay" id="themeModal">
+            <div class="modal-header">
+                <span>Choose Theme</span>
+                <span class="close-modal" onclick="closeModal('themeModal')">✕</span>
+            </div>
+            <div class="modal-body">
+                <div class="theme-option" onclick="setTheme('#121212')">Dark Theme (Default)</div>
+                <div class="theme-option" onclick="setTheme('#0f172a')">Midnight Blue</div>
+                <div class="theme-option" onclick="setTheme('#18181b')">Sunset Dark</div>
+            </div>
+        </div>
+
+        <!-- 3. Privacy Policy Modal -->
+        <div class="modal-overlay" id="privacyModal">
+            <div class="modal-header">
+                <span>Privacy Policy</span>
+                <span class="close-modal" onclick="closeModal('privacyModal')">✕</span>
+            </div>
+            <div class="modal-body" style="font-size: 14px; color: #aaa; line-height: 1.6;">
+                <p>Your privacy is important to us. This Calculator app does not collect or share any personal data or calculation history outside your device.</p>
+            </div>
+        </div>
+
+        <!-- 4. Send Feedback Modal -->
+        <div class="modal-overlay" id="feedbackModal">
+            <div class="modal-header">
+                <span>Send Feedback</span>
+                <span class="close-modal" onclick="closeModal('feedbackModal')">✕</span>
+            </div>
+            <div class="modal-body" style="font-size: 14px; color: #ccc;">
+                <p>We'd love to hear your thoughts! Send your suggestions to support@calculatorapp.com</p>
+            </div>
+        </div>
+
+        <!-- 5. Help Modal -->
+        <div class="modal-overlay" id="helpModal">
+            <div class="modal-header">
+                <span>Help & Guide</span>
+                <span class="close-modal" onclick="closeModal('helpModal')">✕</span>
+            </div>
+            <div class="modal-body" style="font-size: 14px; color: #ccc; line-height: 1.6;">
+                <p>• Use standard number buttons for basic math.<br>• Tap 🕒 to view past calculations.<br>• Tap result screen to copy value.<br>• Use the 3-dot menu for settings and themes.</p>
+            </div>
+        </div>
+
+        <!-- Display Screen -->
+        <div class="display-screen">
+            <div class="current-expression" id="currentExpr"></div>
+            <div class="main-display" id="display" onclick="copyResult()" title="Tap to copy">0</div>
+        </div>
+
+        <!-- Keypad Layout -->
+        <div class="keypad">
+            <button class="btn accent-theme" onclick="pressButton('clear')">AC</button>
+            <button class="btn accent-theme" onclick="pressButton('%')">%</button>
+            <button class="btn accent-theme" onclick="pressButton('/')">÷</button>
+            <button class="btn accent-theme" onclick="pressButton('*')">×</button>
+
+            <button class="btn" onclick="pressButton('7')">7</button>
+            <button class="btn" onclick="pressButton('8')">8</button>
+            <button class="btn" onclick="pressButton('9')">9</button>
+            <button class="btn accent-theme" onclick="pressButton('-')">-</button>
+
+            <button class="btn" onclick="pressButton('4')">4</button>
+            <button class="btn" onclick="pressButton('5')">5</button>
+            <button class="btn" onclick="pressButton('6')">6</button>
+            <button class="btn accent-theme" onclick="pressButton('+')">+</button>
+
+            <button class="btn" onclick="pressButton('1')">1</button>
+            <button class="btn" onclick="pressButton('2')">2</button>
+            <button class="btn" onclick="pressButton('3')">3</button>
+            <button class="btn accent-theme" onclick="pressButton('backspace')">⌫</button>
+
+            <button class="btn" onclick="pressButton('00')">00</button>
+            <button class="btn" onclick="pressButton('0')">0</button>
+            <button class="btn" onclick="pressButton('000')">000</button>
+            <button class="btn accent-theme" onclick="pressButton('.')">.</button>
+
+            <button class="btn accent-theme" style="grid-column: span 4; width: 100%; border-radius: 30px; aspect-ratio: auto; height: 50px;" onclick="pressButton('equals')">=</button>
+        </div>
+
+        <div class="toast" id="toast">Copied to clipboard</div>
+    </div>
+
+    <script>
+        let display = document.getElementById("display");
+        let currentExpr = document.getElementById("currentExpr");
+        let historyContent = document.getElementById("historyContent");
+        let historyListArray = [];
+
+        function pressButton(val) {
+            triggerVibration();
+            
+            if (val === 'clear') {
+                clearAll();
+            } else if (val === 'backspace') {
+                deleteChar();
+            } else if (val === 'equals') {
+                calculate();
+            } else {
+                appendValue(val);
+            }
+        }
+
+        function triggerVibration() {
+            if ("vibrate" in navigator) {
+                navigator.vibrate(30);
+            }
+        }
+
+        function appendValue(val) {
+            if (display.innerText === "0" && val !== '.' && val !== '00' && val !== '000') {
+                display.innerText = val;
+            } else if (display.innerText === "0" && (val === '00' || val === '000')) {
+                display.innerText = "0";
+            } else {
+                display.innerText += val;
+            }
+        }
+
+        function clearAll() {
+            display.innerText = "0";
+            currentExpr.innerText = "";
+        }
+
+        function deleteChar() {
+            let currentText = display.innerText;
+            if (currentText.length > 1) {
+                display.innerText = currentText.slice(0, -1);
+            } else {
+                display.innerText = "0";
+            }
+        }
+
+        function calculate() {
+            try {
+                let expression = display.innerText;
+                let formattedExpression = expression
+                    .replace(/×/g, '*')
+                    .replace(/÷/g, '/');
+
+                let result;
+                if (formattedExpression.includes('%')) {
+                    result = eval(formattedExpression.replace(/(\d+)(\+|\-|\*|\/)([\d.]+)%/, function(match, num1, operator, num2) {
+                        let calcPercent = (num1 * num2) / 100;
+                        return `${num1} ${operator} ${calcPercent}`;
+                    }));
+                } else {
+                    result = eval(formattedExpression);
+                }
+
+                if (String(result).includes('%')) {
+                    result = eval(formattedExpression.replace(/%/g, '/100'));
+                }
+
+                historyListArray.unshift({ expr: expression, res: result });
+                updateHistoryUI();
+
+                currentExpr.innerText = expression;
+                display.innerText = result;
+            } catch (error) {
+                display.innerText = "Error";
+            }
+        }
+
+        function copyResult() {
+            let textToCopy = display.innerText;
+            if(textToCopy !== "0" && textToCopy !== "Error") {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    showToast("Copied to clipboard");
+                });
+            }
+        }
+
+        function showToast(message) {
+            let toast = document.getElementById("toast");
+            toast.innerText = message;
+            toast.classList.add("show");
+            setTimeout(() => {
+                toast.classList.remove("show");
+            }, 1500);
+        }
+
+        function updateHistoryUI() {
+            if (historyListArray.length > 0) {
+                historyContent.innerHTML = "";
+                historyListArray.forEach(item => {
+                    let card = document.createElement("div");
+                    card.className = "history-card";
+                    card.innerHTML = `<div class="h-expr">${item.expr} =</div><div class="h-res">${item.res}</div>`;
+                    historyContent.appendChild(card);
+                });
+            } else {
+                historyContent.innerHTML = `<div class="empty-history">No history yet</div>`;
+            }
+        }
+
+        function clearHistory() {
+            historyListArray = [];
+            updateHistoryUI();
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add("active");
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove("active");
+        }
+
+        function toggleMenu() {
+            let menu = document.getElementById("dropdownMenu");
+            menu.classList.toggle("active");
+        }
+
+        function setTheme(bgColor) {
+            document.getElementById("mainContainer").style.backgroundColor = bgColor;
+            document.body.style.backgroundColor = bgColor;
+            closeModal('themeModal');
+        }
+
+        document.addEventListener('keydown', function(event) {
+            let key = event.key;
+            if (!isNaN(key) || key === '.') {
+                pressButton(key);
+            } else if (key === '+' || key === '-' || key === '*' || key === '/' || key === '%') {
+                pressButton(key);
+            } else if (key === 'Enter' || key === '=') {
+                pressButton('equals');
+            } else if (key === 'Backspace') {
+                pressButton('backspace');
+            } else if (key === 'Escape') {
+                pressButton('clear');
+            }
+        });
+
+        window.onclick = function(event) {
+            if (!event.target.matches('.icon-btn')) {
+                let dropdowns = document.getElementsByClassName("dropdown-menu");
+                for (let i = 0; i < dropdowns.length; i++) {
+                    let openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('active')) {
+                        openDropdown.classList.remove('active');
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
